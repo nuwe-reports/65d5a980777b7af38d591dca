@@ -1,14 +1,14 @@
 
 package com.example.demo;
 
+import static org.hamcrest.Matchers.emptyArray;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -110,6 +110,14 @@ class DoctorControllerUnitTest {
 
         mockMvc.perform(delete("/api/doctors/{id}", doctorId))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void givenValidDoctors_whenDeleteAllDoctors_thenReturnsOkWithStatusCode200() throws Exception{
+        mockMvc.perform(delete("/api/doctors"))
+                .andExpect(status().isOk());
+
+        verify(doctorRepository, times(1)).deleteAll();
     }
 
     @Test
@@ -219,6 +227,14 @@ class PatientControllerUnitTest {
     }
 
     @Test
+    void givenValidPatients_whenDeleteAllPatients_thenReturnsOkWithStatusCode200() throws Exception{
+        mockMvc.perform(delete("/api/patients"))
+                .andExpect(status().isOk());
+
+        verify(patientRepository, times(1)).deleteAll();
+    }
+
+    @Test
     void givenValidPatientId_whenGetPatientById_theReturnsOkWithPatient() throws Exception {
         long patientId = 1L;
 
@@ -315,6 +331,14 @@ class RoomControllerUnitTest {
     }
 
     @Test
+    void givenValidRooms_whenDeleteAllRooms_thenReturnsOkWithStatusCode200() throws Exception{
+        mockMvc.perform(delete("/api/rooms"))
+                .andExpect(status().isOk());
+
+        verify(roomRepository, times(1)).deleteAll();
+    }
+
+    @Test
     void givenValidRoomName_whenGetRoomName_theReturnsOkWithRoom() throws Exception {
         String roomName = "dermatology";
 
@@ -334,6 +358,17 @@ class RoomControllerUnitTest {
         mockMvc.perform(get("/api/rooms/{roomName}", invalidRoomName))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void givenEmptyRooms_whenGetRooms_thenReturnsNoContentWithStatusCode204() throws Exception {
+
+        when(roomRepository.findAll()).thenReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/api/rooms"))
+                .andExpect(status().isNoContent());
+    }
+
+
 
 }
 
