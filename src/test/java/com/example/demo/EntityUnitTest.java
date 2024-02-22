@@ -57,8 +57,7 @@ class EntityUnitTest {
         try {
             TechhubApplication.main(new String[]{});
             assertTrue(true);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             fail("application fail: " + e.getMessage());
         }
     }
@@ -166,13 +165,14 @@ class EntityUnitTest {
     @Tag("success-case")
     @DisplayName("Compare Appointment Dates")
     void testCompareAppointmentDates() {
-        Appointment appointmentFoundOne = entityManager.find(Appointment.class, a1.getId());
-        Appointment appointmentFoundTwo = entityManager.find(Appointment.class, a2.getId());
+        Appointment appointmentOne = entityManager.find(Appointment.class, a1.getId());
+        Appointment appointmentTwo = entityManager.find(Appointment.class, a2.getId());
         Appointment appointmentFoundThree = entityManager.find(Appointment.class, a3.getId());
 
         assertAll("Appointment time validation",
-                () -> assertThat(appointmentFoundOne.getStartsAt()).as("Start time of appointmentFoundOne should be before its end time").isBefore(appointmentFoundOne.getFinishesAt()),
-                () -> assertThat(appointmentFoundTwo.getStartsAt()).as("Start time of appointmentFoundTwo should be before its end time").isBefore(appointmentFoundTwo.getFinishesAt()),
+                () -> assertThat(appointmentOne.getStartsAt())
+                        .as("Start time of appointmentOne should be before its end time").isBefore(appointmentOne.getFinishesAt()),
+                () -> assertThat(appointmentTwo.getStartsAt()).as("Start time of appointmentTwo should be before its end time").isBefore(appointmentTwo.getFinishesAt()),
                 () -> assertThat(appointmentFoundThree.getStartsAt()).as("Start time of appointmentFoundThree should be before its end time").isBefore(appointmentFoundThree.getFinishesAt())
         );
     }
@@ -213,22 +213,47 @@ class EntityUnitTest {
 
     @Test
     @Tag("error-case")
+    @DisplayName("Overlapping Test")
+    void testOverlapping() {
+
+        // Case 1: A.starts == B.starts
+        Appointment appointmentOne = entityManager.find(Appointment.class, a1.getId());
+        Appointment appointmentTwo = entityManager.find(Appointment.class, a2.getId());
+
+        appointmentOne.setStartsAt(parseDateTime("08:00 01/01/2024"));
+        appointmentOne.setFinishesAt(parseDateTime("08:15 01/01/2024"));
+
+        appointmentTwo.setStartsAt(parseDateTime("08:00 01/01/2024"));
+        appointmentTwo.setFinishesAt(parseDateTime("08:30 01/01/2024"));
+
+        // Appointments overlap
+        assertTrue(appointmentOne.overlaps(appointmentTwo), "Appointments should overlap");
+
+        // Appointments don't overlap
+        appointmentTwo.setStartsAt(parseDateTime("09:00 01/01/2024"));
+        assertFalse(appointmentOne.overlaps(appointmentTwo), "Appointments should not overlap when start times differ");
+
+        // Appointments don't overlap
+        appointmentTwo.setStartsAt(parseDateTime("08:15 01/01/2024"));
+        assertFalse(appointmentOne.overlaps(appointmentTwo), "Appointments should not overlap when one starts exactly at the end of the other");
+    }
+
+    @Test
+    @Tag("error-case")
     @DisplayName("Overlapping When Start Times Are Equal")
     void testOverlappingWhenStartTimesAreEqual() {
 
         // Case 1: A.starts == B.starts
-        Appointment appointmentFoundOne = entityManager.find(Appointment.class, a1.getId());
-        Appointment appointmentFoundTwo = entityManager.find(Appointment.class, a2.getId());
+        Appointment appointmentOne = entityManager.find(Appointment.class, a1.getId());
+        Appointment appointmentTwo = entityManager.find(Appointment.class, a2.getId());
 
-        appointmentFoundOne.setStartsAt(parseDateTime("08:00 01/01/2024"));
-        appointmentFoundOne.setFinishesAt(parseDateTime("08:15 01/01/2024"));
+        appointmentOne.setStartsAt(parseDateTime("08:00 01/01/2024"));
+        appointmentOne.setFinishesAt(parseDateTime("08:15 01/01/2024"));
 
-        appointmentFoundTwo.setStartsAt(parseDateTime("08:00 01/01/2024"));
-        appointmentFoundTwo.setFinishesAt(parseDateTime("08:30 01/01/2024"));
+        appointmentTwo.setStartsAt(parseDateTime("08:00 01/01/2024"));
+        appointmentTwo.setFinishesAt(parseDateTime("08:30 01/01/2024"));
 
-        assertThat(appointmentFoundOne.getStartsAt())
-                .as("Appointment start times should be equal")
-                .isEqualTo(appointmentFoundTwo.getStartsAt());
+        assertTrue(appointmentOne.overlaps(appointmentTwo), "Overlaps when start times are equal");
     }
 
     @Test
@@ -237,18 +262,16 @@ class EntityUnitTest {
     void testOverlappingWhenEndTimesAreEqual() {
 
         // Case 2: A.finishes == B.finishes
-        Appointment appointmentFoundOne = entityManager.find(Appointment.class, a1.getId());
-        Appointment appointmentFoundTwo = entityManager.find(Appointment.class, a2.getId());
+        Appointment appointmentOne = entityManager.find(Appointment.class, a1.getId());
+        Appointment appointmentTwo = entityManager.find(Appointment.class, a2.getId());
 
-        appointmentFoundOne.setStartsAt(parseDateTime("08:00 01/01/2024"));
-        appointmentFoundOne.setFinishesAt(parseDateTime("08:30 01/01/2024"));
+        appointmentOne.setStartsAt(parseDateTime("08:00 01/01/2024"));
+        appointmentOne.setFinishesAt(parseDateTime("08:30 01/01/2024"));
 
-        appointmentFoundTwo.setStartsAt(parseDateTime("08:15 01/01/2024"));
-        appointmentFoundTwo.setFinishesAt(parseDateTime("08:30 01/01/2024"));
+        appointmentTwo.setStartsAt(parseDateTime("08:15 01/01/2024"));
+        appointmentTwo.setFinishesAt(parseDateTime("08:30 01/01/2024"));
 
-        assertThat(appointmentFoundOne.getFinishesAt())
-                .as("Appointment end times should be equal")
-                .isEqualTo(appointmentFoundTwo.getFinishesAt());
+        assertTrue(appointmentOne.overlaps(appointmentTwo), "Overlaps when end times are equal");
     }
 
     @Test
@@ -257,22 +280,16 @@ class EntityUnitTest {
     public void testOverlappingWhenStartsBeforeAndFinishesWithin() {
 
         // Case 3: A.starts < B.finishes && B.finishes < A.finishes
-        Appointment appointmentFoundOne = entityManager.find(Appointment.class, a1.getId());
-        Appointment appointmentFoundTwo = entityManager.find(Appointment.class, a2.getId());
+        Appointment appointmentOne = entityManager.find(Appointment.class, a1.getId());
+        Appointment appointmentTwo = entityManager.find(Appointment.class, a2.getId());
 
-        appointmentFoundOne.setStartsAt(parseDateTime("08:00 01/01/2024"));
-        appointmentFoundOne.setFinishesAt(parseDateTime("08:30 01/01/2024"));
+        appointmentOne.setStartsAt(parseDateTime("08:00 01/01/2024"));
+        appointmentOne.setFinishesAt(parseDateTime("08:30 01/01/2024"));
 
-        appointmentFoundTwo.setStartsAt(parseDateTime("08:00 01/01/2024"));
-        appointmentFoundTwo.setFinishesAt(parseDateTime("08:15 01/01/2024"));
+        appointmentTwo.setStartsAt(parseDateTime("08:00 01/01/2024"));
+        appointmentTwo.setFinishesAt(parseDateTime("08:15 01/01/2024"));
 
-        assertThat(appointmentFoundOne.getStartsAt())
-                .as("Appointment One should start before the finish time of Appointment Two")
-                .isBefore(appointmentFoundTwo.getFinishesAt());
-
-        assertThat(appointmentFoundTwo.getFinishesAt())
-                .as("Appointment Two should finish before the finish time of Appointment One")
-                .isBefore(appointmentFoundOne.getFinishesAt());
+        assertTrue(appointmentOne.overlaps(appointmentTwo));
     }
 
     @Test
@@ -280,23 +297,35 @@ class EntityUnitTest {
     @DisplayName("Overlapping When Starts After And Finishes Within")
     public void testOverlappingWhenStartsAfterAndFinishesWithin() {
 
+        // Case 3: B.starts < A.starts && A.finishes < B.finishes
+        Appointment appointmentOne = entityManager.find(Appointment.class, a1.getId());
+        Appointment appointmentTwo = entityManager.find(Appointment.class, a2.getId());
+
+        appointmentOne.setStartsAt(parseDateTime("09:30 01/01/2024"));
+        appointmentOne.setFinishesAt(parseDateTime("10:30 01/01/2024"));
+
+        appointmentTwo.setStartsAt(parseDateTime("09:00 01/01/2024"));
+        appointmentTwo.setFinishesAt(parseDateTime("10:00 01/01/2024"));
+
+        assertTrue(appointmentOne.overlaps(appointmentTwo));
+    }
+
+    @Test
+    @Tag("error-case")
+    @DisplayName("Overlapping When Starts After And Finishes Within")
+    public void testOverlappingWhenStartsAfterAndFinishesWithin2() {
+
         // Case 4: B.starts < A.starts && A.finishes < B.finishes
-        Appointment appointmentFoundOne = entityManager.find(Appointment.class, a1.getId());
-        Appointment appointmentFoundTwo = entityManager.find(Appointment.class, a2.getId());
+        Appointment appointmentOne = entityManager.find(Appointment.class, a1.getId());
+        Appointment appointmentTwo = entityManager.find(Appointment.class, a2.getId());
 
-        appointmentFoundOne.setStartsAt(parseDateTime("08:15 01/01/2024"));
-        appointmentFoundOne.setFinishesAt(parseDateTime("08:30 01/01/2024"));
+        appointmentOne.setStartsAt(parseDateTime("09:30 01/01/2024"));
+        appointmentOne.setFinishesAt(parseDateTime("10:30 01/01/2024"));
 
-        appointmentFoundTwo.setStartsAt(parseDateTime("08:00 01/01/2024"));
-        appointmentFoundTwo.setFinishesAt(parseDateTime("09:00 01/01/2024"));
+        appointmentTwo.setStartsAt(parseDateTime("10:00 01/01/2024"));
+        appointmentTwo.setFinishesAt(parseDateTime("11:00 01/01/2024"));
 
-        assertThat(appointmentFoundTwo.getStartsAt())
-                .as("Appointment Two should start before the start time of Appointment One")
-                .isBefore(appointmentFoundOne.getStartsAt());
-
-        assertThat(appointmentFoundOne.getFinishesAt())
-                .as("Appointment One should finish before the finish time of Appointment Two")
-                .isBefore(appointmentFoundTwo.getFinishesAt());
+        assertTrue(appointmentOne.overlaps(appointmentTwo));
     }
 
 }
