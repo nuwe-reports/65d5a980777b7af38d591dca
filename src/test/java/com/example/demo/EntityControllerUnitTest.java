@@ -1,43 +1,38 @@
 
 package com.example.demo;
 
-import static org.hamcrest.Matchers.emptyArray;
-import static org.hamcrest.Matchers.hasSize;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-
-import java.time.LocalDateTime;
-import java.time.format.*;
-
+import com.example.demo.controllers.DoctorController;
+import com.example.demo.controllers.PatientController;
+import com.example.demo.controllers.RoomController;
+import com.example.demo.entities.Doctor;
+import com.example.demo.entities.Patient;
+import com.example.demo.entities.Room;
+import com.example.demo.repositories.DoctorRepository;
+import com.example.demo.repositories.PatientRepository;
+import com.example.demo.repositories.RoomRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 
-import com.example.demo.controllers.*;
-import com.example.demo.repositories.*;
-import com.example.demo.entities.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
-
-/** TODO
+/**
+ * TODO
  * Implement all the unit test in its corresponding class.
  * Make sure to be as exhaustive as possible. Coverage is checked ;)
  */
@@ -55,7 +50,7 @@ class DoctorControllerUnitTest {
     private ObjectMapper objectMapper;
 
     @Test
-    void givenValidDoctors_whenGetAllDoctors_thenReturnsListOfDoctorsWithStatusCode200() throws Exception {
+    void shouldReturnListOfDoctorsWhenValidDoctorsExist() throws Exception {
         List<Doctor> doctors = new ArrayList<>();
         doctors.add(new Doctor("John", "Doe", 30, "john.doe@hospital.com"));
         when(doctorRepository.findAll()).thenReturn(doctors);
@@ -71,7 +66,7 @@ class DoctorControllerUnitTest {
     }
 
     @Test
-    void createDoctor_ReturnsCreatedDoctor() throws Exception {
+    void shouldCreateDoctorSuccessfully() throws Exception {
 
         Doctor doctorToCreate = new Doctor("John", "Doe", 30, "john.doe@hospital.com");
         when(doctorRepository.save(eq(doctorToCreate))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -91,7 +86,7 @@ class DoctorControllerUnitTest {
     }
 
     @Test
-    void givenNoValidDoctorId_whenDeleteDoctor_thenReturnsNoContentWithStatusCode404() throws Exception {
+    void shouldReturnNotFoundWhenDeletingNonexistentDoctor() throws Exception {
         long doctorId = 1L;
 
         when(doctorRepository.findById(doctorId)).thenReturn(Optional.empty());
@@ -101,7 +96,7 @@ class DoctorControllerUnitTest {
     }
 
     @Test
-    void givenValidDoctorId_whenDeleteDoctor_thenReturnsOkWithStatusCode200() throws Exception {
+    void shouldDeleteDoctorSuccessfully() throws Exception {
 
         long doctorId = 1L;
 
@@ -113,7 +108,7 @@ class DoctorControllerUnitTest {
     }
 
     @Test
-    void givenValidDoctors_whenDeleteAllDoctors_thenReturnsOkWithStatusCode200() throws Exception{
+    void shouldDeleteAllDoctorsSuccessfully() throws Exception {
         mockMvc.perform(delete("/api/doctors"))
                 .andExpect(status().isOk());
 
@@ -121,7 +116,7 @@ class DoctorControllerUnitTest {
     }
 
     @Test
-    void givenValidDoctorId_whenGetDoctorById_theReturnsOkWithDoctor() throws Exception {
+    void shouldReturnDoctorByIdWhenDoctorExists() throws Exception {
         long doctorId = 1L;
 
         when(doctorRepository.findById(doctorId)).thenReturn(Optional.of(new Doctor("John", "Doe",
@@ -136,7 +131,7 @@ class DoctorControllerUnitTest {
     }
 
     @Test
-    void givenNoDoctors_whenGetAllDoctors_thenReturnsEmptyListWithStatusCode204() throws Exception {
+    void shouldReturnEmptyListWhenNoDoctorsExist() throws Exception {
         when(doctorRepository.findAll()).thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/api/doctors"))
@@ -144,7 +139,7 @@ class DoctorControllerUnitTest {
     }
 
     @Test
-    void givenInvalidDoctorId_whenGetDoctorById_thenReturnsNotFoundWithStatusCode404() throws Exception {
+    void shouldReturnNotFoundWhenRetrievingDoctorWithInvalidId() throws Exception {
         long invalidDoctorId = -1L;
 
         when(doctorRepository.findById(invalidDoctorId)).thenReturn(Optional.empty());
@@ -152,7 +147,6 @@ class DoctorControllerUnitTest {
         mockMvc.perform(get("/api/doctors/{id}", invalidDoctorId))
                 .andExpect(status().isNotFound());
     }
-
 }
 
 
@@ -169,7 +163,7 @@ class PatientControllerUnitTest {
     private ObjectMapper objectMapper;
 
     @Test
-    void givenValidPatients_whenGetAllPatients_thenReturnsListOfPatientsWithStatusCode200() throws Exception {
+    void shouldReturnListOfPatientsWhenValidPatientsExist() throws Exception {
         List<Patient> patients = new ArrayList<>();
         patients.add(new Patient("Jane", "Smith", 20, "jane.smith@hospital.com"));
         when(patientRepository.findAll()).thenReturn(patients);
@@ -185,7 +179,7 @@ class PatientControllerUnitTest {
     }
 
     @Test
-    void createPatient_ReturnsCreatedPatient() throws Exception {
+    void shouldCreatePatientSuccessfully() throws Exception {
 
         Patient patientToCreate = new Patient("Jane", "Smith", 20, "jane.smith@hospital.com");
         when(patientRepository.save(eq(patientToCreate))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -205,7 +199,7 @@ class PatientControllerUnitTest {
     }
 
     @Test
-    void givenNoValidPatientId_whenDeletePatient_thenReturnsNoContentWithStatusCode404() throws Exception {
+    void shouldReturnNotFoundWhenDeletingNonexistentPatient() throws Exception {
         long patientId = 1L;
 
         when(patientRepository.findById(patientId)).thenReturn(Optional.empty());
@@ -215,7 +209,7 @@ class PatientControllerUnitTest {
     }
 
     @Test
-    void givenValidPatientId_whenDeletePatient_thenReturnsOkWithStatusCode200() throws Exception {
+    void shouldDeletePatientSuccessfully() throws Exception {
 
         long patientId = 1L;
 
@@ -227,7 +221,7 @@ class PatientControllerUnitTest {
     }
 
     @Test
-    void givenValidPatients_whenDeleteAllPatients_thenReturnsOkWithStatusCode200() throws Exception{
+    void shouldDeleteAllPatientsSuccessfully() throws Exception {
         mockMvc.perform(delete("/api/patients"))
                 .andExpect(status().isOk());
 
@@ -235,7 +229,7 @@ class PatientControllerUnitTest {
     }
 
     @Test
-    void givenValidPatientId_whenGetPatientById_theReturnsOkWithPatient() throws Exception {
+    void shouldReturnPatientByIdWhenPatientExists() throws Exception {
         long patientId = 1L;
 
         when(patientRepository.findById(patientId)).thenReturn(Optional.of(new Patient("Jane", "Smith",
@@ -250,7 +244,7 @@ class PatientControllerUnitTest {
     }
 
     @Test
-    void givenNoPatients_whenGetAllPatients_thenReturnsEmptyListWithStatusCode204() throws Exception {
+    void shouldReturnEmptyListWhenNoPatientsExist() throws Exception {
         when(patientRepository.findAll()).thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/api/patients"))
@@ -258,7 +252,7 @@ class PatientControllerUnitTest {
     }
 
     @Test
-    void givenInvalidPatientId_whenGetPatientById_thenReturnsNotFoundWithStatusCode404() throws Exception {
+    void shouldReturnNotFoundWhenRetrievingPatientWithInvalidId() throws Exception {
         long invalidPatientId = -1L;
 
         when(patientRepository.findById(invalidPatientId)).thenReturn(Optional.empty());
@@ -282,7 +276,7 @@ class RoomControllerUnitTest {
     private ObjectMapper objectMapper;
 
     @Test
-    void givenValidRoom_whenGetAllRooms_thenReturnsListOfRoomsWithStatusCode200() throws Exception {
+    void shouldReturnListOfRoomsWhenValidRoomsExist() throws Exception {
         List<Room> rooms = new ArrayList<>();
 
         rooms.add(new Room("psychiatry"));
@@ -296,7 +290,7 @@ class RoomControllerUnitTest {
     }
 
     @Test
-    void createRoom_ReturnsCreatedRoom() throws Exception {
+    void shouldCreateRoomSuccessfully() throws Exception {
 
         Room roomToCreate = new Room("psychiatry");
         when(roomRepository.save(eq(roomToCreate))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -310,7 +304,7 @@ class RoomControllerUnitTest {
     }
 
     @Test
-    void givenNoValidRoomName_whenDeleteRoom_thenReturnsNoContentWithStatusCode404() throws Exception {
+    void shouldReturnNotFoundWhenDeletingNonexistentRoom() throws Exception {
         String roomName = "orthopedic";
 
         when(roomRepository.findByRoomName(roomName)).thenReturn(Optional.empty());
@@ -320,7 +314,7 @@ class RoomControllerUnitTest {
     }
 
     @Test
-    void givenValidRoomName_whenDeleteDoctor_thenReturnsOkWithStatusCode200() throws Exception {
+    void shouldDeleteRoomSuccessfully() throws Exception {
 
         String roomName = "orthopedic";
 
@@ -331,7 +325,7 @@ class RoomControllerUnitTest {
     }
 
     @Test
-    void givenValidRooms_whenDeleteAllRooms_thenReturnsOkWithStatusCode200() throws Exception{
+    void shouldDeleteAllRoomsSuccessfully() throws Exception {
         mockMvc.perform(delete("/api/rooms"))
                 .andExpect(status().isOk());
 
@@ -339,7 +333,7 @@ class RoomControllerUnitTest {
     }
 
     @Test
-    void givenValidRoomName_whenGetRoomName_theReturnsOkWithRoom() throws Exception {
+    void shouldReturnRoomByRoomNameWhenRoomExists() throws Exception {
         String roomName = "dermatology";
 
         when(roomRepository.findByRoomName(roomName)).thenReturn(Optional.of(new Room("dermatology")));
@@ -350,7 +344,7 @@ class RoomControllerUnitTest {
     }
 
     @Test
-    void givenInvalidRoomName_whenGetRoomName_thenReturnsNotFoundWithStatusCode404() throws Exception {
+    void shouldReturnNotFoundWhenRetrievingRoomWithInvalidName() throws Exception {
         String invalidRoomName = "as345asd8";
 
         when(roomRepository.findByRoomName(invalidRoomName)).thenReturn(Optional.empty());
@@ -360,15 +354,12 @@ class RoomControllerUnitTest {
     }
 
     @Test
-    void givenEmptyRooms_whenGetRooms_thenReturnsNoContentWithStatusCode204() throws Exception {
+    void shouldReturnEmptyListWhenNoRoomsExist() throws Exception {
 
         when(roomRepository.findAll()).thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/api/rooms"))
                 .andExpect(status().isNoContent());
     }
-
-
-
 }
 
